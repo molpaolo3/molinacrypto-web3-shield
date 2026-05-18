@@ -1,0 +1,6 @@
+# MolinaCrypto Web3 Shield
+# Version: 0.2
+#
+# No external Python packages are required.
+# The program uses only Python standard library modules:
+# tkinter, urllib, json, re, threading, webbrowser, datetime.

@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Build / distribution
+build/
+dist/
+*.spec
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Local test reports
+MolinaCrypto_Web3_Shield_Report.txt
+*_Report.txt
+
+# Optional local archives
+*.tar.gz
+*.zip
