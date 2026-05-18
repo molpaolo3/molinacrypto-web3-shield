@@ -4,6 +4,19 @@ All notable changes to MolinaCrypto Web3 Shield will be documented in this file.
 
 ---
 
+## [0.3] - 2026-05-18
+
+### Fixed
+- Added scrollable left control panel for better Windows/Linux display compatibility.
+- Fixed layout issues on Windows where the Signature / Approval Check area could be cut off.
+- Fixed footer visibility with Resources and molinacrypto.eu buttons.
+- Fixed Quick actions panel visibility on smaller windows or scaled displays.
+
+### Improved
+- More robust desktop layout for Windows display scaling.
+
+---
+
 ## [0.2] - 2026-05-18
 
 ### Added

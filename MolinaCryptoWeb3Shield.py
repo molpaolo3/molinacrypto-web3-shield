@@ -11,7 +11,7 @@ from typing import List, Tuple, Union
 
 
 APP_NAME = "MolinaCrypto Web3 Shield"
-APP_VERSION = "0.2"
+APP_VERSION = "0.3"
 AUTHOR = "Paolo Molina"
 WEBSITE = "https://www.molinacrypto.eu"
 RESOURCES_URL = "https://www.molinacrypto.eu/risorse.html"
@@ -251,8 +251,8 @@ class Web3ShieldApp:
     def __init__(self, window):
         self.root = window
         self.root.title(f"{APP_NAME} v{APP_VERSION}")
-        self.root.geometry("1280x900")
-        self.root.minsize(1180, 840)
+        self.root.geometry("1280x780")
+        self.root.minsize(1080, 680)
 
         self.lang = "it"
         self.last_report = ""
@@ -290,11 +290,11 @@ class Web3ShieldApp:
 
     def build_ui(self):
         self.main = tk.Frame(self.root, bg=self.bg)
-        self.main.pack(fill="both", expand=True, padx=16, pady=12)
+        self.main.pack(fill="both", expand=True, padx=14, pady=8)
 
         self.build_header()
-        self.build_body()
         self.build_footer()
+        self.build_body()
 
     def build_header(self):
         header = tk.Frame(self.main, bg=self.bg)
@@ -377,17 +377,90 @@ class Web3ShieldApp:
 
     def build_body(self):
         body = tk.Frame(self.main, bg=self.bg)
-        body.pack(fill="both", expand=True)
+        body.pack(side="top", fill="both", expand=True)
 
-        left = tk.Frame(body, bg=self.bg)
-        left.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        left = self.create_scrollable_control_panel(body)
 
         right = tk.Frame(body, bg=self.bg)
         right.pack(side="right", fill="both", expand=True, padx=(10, 0))
 
         self.build_control_cards(left)
-        self.build_result_panel(right)
+
+        # Build fixed bottom area first, then let the result panel use the remaining space.
         self.build_actions_panel(right)
+        self.build_result_panel(right)
+
+    def create_scrollable_control_panel(self, parent):
+        outer = tk.Frame(parent, bg=self.bg)
+        outer.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        self.left_canvas = tk.Canvas(
+            outer,
+            bg=self.bg,
+            highlightthickness=0,
+            bd=0
+        )
+        self.left_canvas.pack(side="left", fill="both", expand=True)
+
+        self.left_scrollbar = tk.Scrollbar(
+            outer,
+            orient="vertical",
+            command=self.left_canvas.yview
+        )
+        self.left_scrollbar.pack(side="right", fill="y")
+
+        self.left_canvas.configure(yscrollcommand=self.left_scrollbar.set)
+
+        self.left_scrollable_frame = tk.Frame(self.left_canvas, bg=self.bg)
+
+        self.left_canvas_window = self.left_canvas.create_window(
+            (0, 0),
+            window=self.left_scrollable_frame,
+            anchor="nw"
+        )
+
+        self.left_scrollable_frame.bind(
+            "<Configure>",
+            self.update_left_scroll_region
+        )
+
+        self.left_canvas.bind(
+            "<Configure>",
+            self.update_left_canvas_width
+        )
+
+        self.left_canvas.bind_all("<MouseWheel>", self.on_mousewheel_windows)
+        self.left_canvas.bind_all("<Button-4>", self.on_mousewheel_linux)
+        self.left_canvas.bind_all("<Button-5>", self.on_mousewheel_linux)
+
+        return self.left_scrollable_frame
+
+    def update_left_scroll_region(self, _event=None):
+        try:
+            self.left_canvas.configure(scrollregion=self.left_canvas.bbox("all"))
+        except Exception:
+            pass
+
+    def update_left_canvas_width(self, event):
+        try:
+            self.left_canvas.itemconfigure(self.left_canvas_window, width=event.width)
+        except Exception:
+            pass
+
+    def on_mousewheel_windows(self, event):
+        try:
+            self.left_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        except Exception:
+            pass
+
+    def on_mousewheel_linux(self, event):
+        try:
+            if event.num == 4:
+                self.left_canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                self.left_canvas.yview_scroll(1, "units")
+        except Exception:
+            pass
 
     def build_control_cards(self, parent):
         self.wallet_input = self.create_check_card(
@@ -519,7 +592,7 @@ class Web3ShieldApp:
             padx=16,
             pady=14
         )
-        result_card.pack(fill="both", expand=True)
+        result_card.pack(side="top", fill="both", expand=True)
 
         self.result_title = tk.Label(
             result_card,
@@ -565,7 +638,7 @@ class Web3ShieldApp:
             padx=14,
             pady=10
         )
-        actions_card.pack(fill="x", pady=(12, 0))
+        actions_card.pack(side="bottom", fill="x", pady=(8, 0))
 
         self.actions_title = tk.Label(
             actions_card,
@@ -574,7 +647,7 @@ class Web3ShieldApp:
             fg=self.accent2,
             font=("Arial", 13, "bold")
         )
-        self.actions_title.pack(anchor="w", pady=(0, 8))
+        self.actions_title.pack(anchor="w", pady=(0, 6))
 
         self.actions_frame = tk.Frame(actions_card, bg=self.panel)
         self.actions_frame.pack(fill="x")
@@ -590,7 +663,7 @@ class Web3ShieldApp:
 
     def build_footer(self):
         footer = tk.Frame(self.main, bg=self.bg)
-        footer.pack(fill="x", pady=(12, 0))
+        footer.pack(side="bottom", fill="x", pady=(8, 0))
 
         self.status_label = tk.Label(
             footer,
