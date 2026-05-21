@@ -1,4 +1,5 @@
 import json
+import base64
 import re
 import threading
 import urllib.parse
@@ -11,7 +12,7 @@ from typing import List, Tuple, Union
 
 
 APP_NAME = "MolinaCrypto Web3 Shield"
-APP_VERSION = "0.3"
+APP_VERSION = "0.4"
 AUTHOR = "Paolo Molina"
 WEBSITE = "https://www.molinacrypto.eu"
 RESOURCES_URL = "https://www.molinacrypto.eu/risorse.html"
@@ -23,6 +24,10 @@ BTC_PATTERNS = [
 
 EVM_PATTERN = re.compile(r"^0x[a-fA-F0-9]{40}$")
 URL_PATTERN = re.compile(r"^https?://", re.IGNORECASE)
+WWW_PATTERN = re.compile(r"^www\.[^\s]+\.[a-zA-Z]{2,}(/.*)?$", re.IGNORECASE)
+EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+DOMAIN_PATTERN = re.compile(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$")
+
 
 MEMPOOL_ADDRESS_API = "https://mempool.space/api/address/{address}"
 MEMPOOL_FEES_API = "https://mempool.space/api/v1/fees/recommended"
@@ -125,9 +130,9 @@ TEXT = {
         "wallet_card": "Wallet / Address Check",
         "wallet_hint": "Incolla indirizzo BTC o ETH/EVM pubblico",
         "wallet_btn": "Analizza wallet",
-        "link_card": "Link / dApp Check",
-        "link_hint": "Incolla link dApp, claim, mint, airdrop o sito sospetto",
-        "link_btn": "Controlla link",
+        "link_card": "Check URL / e-mail / dApp",
+        "link_hint": "Incolla URL con https://, http:// o www.; oppure una e-mail sospetta",
+        "link_btn": "Check URL / e-mail / dApp",
         "contract_card": "Smart Contract Check",
         "contract_hint": "Incolla indirizzo contratto o address EVM",
         "contract_btn": "Controlla contratto",
@@ -166,9 +171,9 @@ TEXT = {
         "wallet_card": "Wallet / Address Check",
         "wallet_hint": "Paste public BTC or ETH/EVM address",
         "wallet_btn": "Analyze wallet",
-        "link_card": "Link / dApp Check",
-        "link_hint": "Paste dApp, claim, mint, airdrop or suspicious website link",
-        "link_btn": "Check link",
+        "link_card": "Check URL / e-mail / dApp",
+        "link_hint": "Paste a URL with https://, http:// or www.; or a suspicious e-mail address",
+        "link_btn": "Check URL / e-mail / dApp",
         "contract_card": "Smart Contract Check",
         "contract_hint": "Paste contract address or EVM address",
         "contract_btn": "Check contract",
@@ -215,11 +220,108 @@ def fetch_json(url, timeout=15):
 
 def normalize_url(value):
     raw = value.strip()
-    if raw and not URL_PATTERN.match(raw):
+
+    if raw.lower().startswith("www."):
         raw = "https://" + raw
+
     parsed = urllib.parse.urlparse(raw)
     host = parsed.netloc.lower().split("@")[-1].split(":")[0].strip()
+
     return raw, parsed, host
+
+
+def is_valid_url_input(value):
+    raw = value.strip()
+
+    if not raw:
+        return False
+
+    if URL_PATTERN.match(raw):
+        parsed = urllib.parse.urlparse(raw)
+        return bool(parsed.scheme in ("http", "https") and parsed.netloc and "." in parsed.netloc)
+
+    if WWW_PATTERN.match(raw):
+        return True
+
+    return False
+
+
+def build_virustotal_url(normalized_url):
+    # VirusTotal URL pages use a URL-safe base64 identifier without padding.
+    encoded = base64.urlsafe_b64encode(normalized_url.encode("utf-8")).decode("ascii").rstrip("=")
+    return f"https://www.virustotal.com/gui/url/{encoded}"
+
+
+def build_urlscan_search_url(normalized_url):
+    parsed = urllib.parse.urlparse(normalized_url)
+    host = parsed.netloc.lower().split("@")[-1].split(":")[0].strip()
+
+    if not host:
+        host = normalized_url.replace("https://", "").replace("http://", "").split("/")[0]
+
+    encoded = urllib.parse.quote(f'domain:"{host}"', safe="")
+    return f"https://urlscan.io/search/#{encoded}"
+
+
+def analyze_email_address(email, lang="it"):
+    email = email.strip()
+    local_part, domain = email.split("@", 1)
+    domain = domain.lower()
+    local_part = local_part.lower()
+
+    score = 100
+    indicators = []
+
+    if lang == "it":
+        indicators.append(f"E-mail analizzata: {email}")
+        indicators.append(f"Dominio e-mail: {domain}")
+    else:
+        indicators.append(f"Analyzed e-mail: {email}")
+        indicators.append(f"E-mail domain: {domain}")
+
+    if "-" in domain:
+        score -= 15
+        indicators.append(
+            "Dominio con trattini: possibile imitazione o dominio artificiale."
+            if lang == "it"
+            else "Domain contains hyphens: possible imitation or artificial domain."
+        )
+
+    if any(word in local_part for word in ["support", "security", "helpdesk", "admin", "verify"]):
+        score -= 18
+        indicators.append(
+            "Local-part sensibile usata spesso nel phishing: support/security/helpdesk/admin/verify."
+            if lang == "it"
+            else "Sensitive local-part often used in phishing: support/security/helpdesk/admin/verify."
+        )
+
+    if any(word in domain for word in SUSPICIOUS_WORDS):
+        score -= 22
+        indicators.append(
+            "Il dominio contiene parole tipiche di campagne phishing/Web3."
+            if lang == "it"
+            else "The domain contains words commonly used in phishing/Web3 scams."
+        )
+
+    brand_hits = [brand for brand in KNOWN_BRANDS if brand in domain]
+    if brand_hits:
+        official_like = any(domain == f"{brand}.com" or domain.endswith(f".{brand}.com") for brand in brand_hits)
+        if not official_like:
+            score -= 25
+            indicators.append(
+                ("Contiene brand noti ma non sembra dominio ufficiale: " if lang == "it" else "Contains known brands but does not look official: ")
+                + ", ".join(brand_hits[:5])
+            )
+
+    if score == 100:
+        indicators.append(
+            "Nessun indicatore statico forte rilevato, ma verifica comunque il mittente tramite canali ufficiali."
+            if lang == "it"
+            else "No strong static indicator detected, but still verify the sender through official channels."
+        )
+
+    score = max(0, min(100, score))
+    return score, indicators
 
 
 def detect_wallet_type(value):
@@ -281,12 +383,241 @@ class Web3ShieldApp:
         self.build_ui()
         self.build_context_menu()
         self.render_empty_result()
+        self.root.after(500, self.show_startup_disclaimer)
 
     def t(self, key):
         return TEXT[self.lang].get(key, key)
 
     def setup_root(self):
         self.root.configure(bg=self.bg)
+
+    def draw_molinacrypto_logo(self, parent, bg_color, size=58):
+        canvas = tk.Canvas(
+            parent,
+            width=size,
+            height=size,
+            bg=bg_color,
+            highlightthickness=0,
+            bd=0
+        )
+
+        # Colori logo stile MolinaCrypto: blu acceso sopra, blu profondo sotto.
+        outer_shadow = "#06111f"
+        blue_top = "#168df7"
+        blue_mid = "#0b6ee8"
+        blue_bottom = "#064db8"
+
+        pad = 2
+        x1 = pad
+        y1 = pad
+        x2 = size - pad
+        y2 = size - pad
+        r = int(size * 0.28)
+
+        # Ombra/base arrotondata.
+        canvas.create_oval(x1, y1, x1 + r, y1 + r, fill=outer_shadow, outline=outer_shadow)
+        canvas.create_oval(x2 - r, y1, x2, y1 + r, fill=outer_shadow, outline=outer_shadow)
+        canvas.create_oval(x1, y2 - r, x1 + r, y2, fill=outer_shadow, outline=outer_shadow)
+        canvas.create_oval(x2 - r, y2 - r, x2, y2, fill=outer_shadow, outline=outer_shadow)
+        canvas.create_rectangle(x1 + r / 2, y1, x2 - r / 2, y2, fill=outer_shadow, outline=outer_shadow)
+        canvas.create_rectangle(x1, y1 + r / 2, x2, y2 - r / 2, fill=outer_shadow, outline=outer_shadow)
+
+        # Corpo arrotondato.
+        ix1 = int(size * 0.09)
+        iy1 = int(size * 0.09)
+        ix2 = int(size * 0.91)
+        iy2 = int(size * 0.91)
+        ir = int(size * 0.24)
+
+        canvas.create_oval(ix1, iy1, ix1 + ir, iy1 + ir, fill=blue_top, outline=blue_top)
+        canvas.create_oval(ix2 - ir, iy1, ix2, iy1 + ir, fill=blue_top, outline=blue_top)
+        canvas.create_oval(ix1, iy2 - ir, ix1 + ir, iy2, fill=blue_bottom, outline=blue_bottom)
+        canvas.create_oval(ix2 - ir, iy2 - ir, ix2, iy2, fill=blue_bottom, outline=blue_bottom)
+        canvas.create_rectangle(ix1 + ir / 2, iy1, ix2 - ir / 2, iy2, fill=blue_mid, outline=blue_mid)
+        canvas.create_rectangle(ix1, iy1 + ir / 2, ix2, iy2 - ir / 2, fill=blue_mid, outline=blue_mid)
+
+        # Highlight superiore.
+        canvas.create_rectangle(
+            ix1 + int(size * 0.12),
+            iy1 + int(size * 0.07),
+            ix2 - int(size * 0.12),
+            iy1 + int(size * 0.30),
+            fill=blue_top,
+            outline=blue_top
+        )
+
+        # M bianca grande.
+        canvas.create_text(
+            size / 2,
+            size / 2 + int(size * 0.03),
+            text="M",
+            fill="white",
+            font=("Arial", int(size * 0.48), "bold")
+        )
+
+        return canvas
+
+    def show_startup_disclaimer(self):
+        disclaimer = tk.Toplevel(self.root)
+        disclaimer.title(f"{APP_NAME} · Disclaimer")
+        disclaimer.configure(bg=self.bg)
+        disclaimer.resizable(False, False)
+        disclaimer.transient(self.root)
+        disclaimer.grab_set()
+
+        # Rimuove barra titolo, X, riduci a icona e massimizza.
+        # La scelta deve avvenire solo dai pulsanti interni.
+        disclaimer.overrideredirect(True)
+
+        width = 720
+        height = 430
+
+        self.root.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (width // 2)
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (height // 2)
+        disclaimer.geometry(f"{width}x{height}+{x}+{y}")
+
+        outer = tk.Frame(
+            disclaimer,
+            bg=self.bg,
+            padx=18,
+            pady=18
+        )
+        outer.pack(fill="both", expand=True)
+
+        card = tk.Frame(
+            outer,
+            bg=self.panel,
+            highlightbackground=self.accent2,
+            highlightcolor=self.accent2,
+            highlightthickness=2,
+            padx=22,
+            pady=18
+        )
+        card.pack(fill="both", expand=True)
+
+        header = tk.Frame(card, bg=self.panel)
+        header.pack(fill="x", pady=(0, 14))
+
+        icon_canvas = self.draw_molinacrypto_logo(
+            header,
+            self.panel,
+            size=54
+        )
+        icon_canvas.pack(side="left", padx=(0, 12))
+
+        title_box = tk.Frame(header, bg=self.panel)
+        title_box.pack(side="left", fill="x", expand=True)
+
+        title = tk.Label(
+            title_box,
+            text="MolinaCrypto Web3 Shield",
+            bg=self.panel,
+            fg=self.text,
+            font=("Arial", 20, "bold")
+        )
+        title.pack(anchor="w")
+
+        subtitle = tk.Label(
+            title_box,
+            text="Disclaimer · Informational security check",
+            bg=self.panel,
+            fg=self.accent2,
+            font=("Arial", 10, "bold")
+        )
+        subtitle.pack(anchor="w", pady=(3, 0))
+
+        line = tk.Frame(card, bg=self.border, height=1)
+        line.pack(fill="x", pady=(0, 14))
+
+        text_box = tk.Text(
+            card,
+            bg=self.panel,
+            fg=self.text,
+            relief="flat",
+            wrap="word",
+            font=("Arial", 10),
+            padx=4,
+            pady=4,
+            height=13,
+            cursor="arrow"
+        )
+        text_box.pack(fill="both", expand=True)
+
+        disclaimer_text = (
+            "ITALIANO\n"
+            "Questo tool può effettuare richieste a servizi esterni e utilizza controlli matematici ed euristici "
+            "su dati pubblici e indicatori di rischio. I risultati forniscono un grado di rischio orientativo, "
+            "non una certezza assoluta di sicurezza, e non costituiscono consulenza finanziaria, legale, fiscale "
+            "o professionale. La responsabilità delle decisioni operative resta dell’utente.\n\n"
+            "ENGLISH\n"
+            "This tool may query external services and uses mathematical and heuristic checks based on public data "
+            "and risk indicators. The results provide an indicative risk level, not an absolute guarantee of safety, "
+            "and do not constitute financial, legal, tax or professional advice. The user remains responsible for "
+            "any operational decision."
+        )
+
+        text_box.insert("1.0", disclaimer_text)
+        text_box.tag_configure(
+            "heading",
+            foreground=self.accent2,
+            font=("Arial", 10, "bold")
+        )
+        text_box.tag_add("heading", "1.0", "1.end")
+        text_box.tag_add("heading", "4.0", "4.end")
+        text_box.configure(state="disabled")
+
+        button_row = tk.Frame(card, bg=self.panel)
+        button_row.pack(fill="x", pady=(16, 0))
+
+        def accept_disclaimer():
+            disclaimer.destroy()
+
+        def reject_disclaimer():
+            try:
+                disclaimer.destroy()
+            except Exception:
+                pass
+            self.root.after(50, self.root.destroy)
+
+        reject_btn = tk.Button(
+            button_row,
+            text="Rifiuta / Reject",
+            command=reject_disclaimer,
+            bg="#7f1d1d",
+            fg="white",
+            activebackground="#991b1b",
+            activeforeground="white",
+            relief="flat",
+            padx=18,
+            pady=8,
+            font=("Arial", 10, "bold"),
+            cursor="hand2"
+        )
+        reject_btn.pack(side="right", padx=(10, 0))
+
+        ok_btn = tk.Button(
+            button_row,
+            text="Ho capito / I understand",
+            command=accept_disclaimer,
+            bg="#0f766e",
+            fg="white",
+            activebackground="#14b8a6",
+            activeforeground="white",
+            relief="flat",
+            padx=18,
+            pady=8,
+            font=("Arial", 10, "bold"),
+            cursor="hand2"
+        )
+        ok_btn.pack(side="right")
+
+        # Nessuna chiusura da tastiera: decisione solo da pulsanti.
+        disclaimer.bind("<Escape>", lambda event: "break")
+        disclaimer.bind("<Alt-F4>", lambda event: "break")
+
+        ok_btn.focus_set()
+        disclaimer.wait_window()
 
     def build_ui(self):
         self.main = tk.Frame(self.root, bg=self.bg)
@@ -306,14 +637,12 @@ class Web3ShieldApp:
         title_row = tk.Frame(left, bg=self.bg)
         title_row.pack(anchor="w")
 
-        logo = tk.Label(
+        logo_canvas = self.draw_molinacrypto_logo(
             title_row,
-            text="🛡",
-            bg=self.bg,
-            fg=self.accent,
-            font=("Arial", 30, "bold")
+            self.bg,
+            size=58
         )
-        logo.pack(side="left", padx=(0, 10))
+        logo_canvas.pack(side="left", padx=(0, 10))
 
         title_box = tk.Frame(title_row, bg=self.bg)
         title_box.pack(side="left")
@@ -1074,6 +1403,47 @@ class Web3ShieldApp:
             messagebox.showwarning(APP_NAME, self.t("missing"))
             return
 
+        if EMAIL_PATTERN.match(value):
+            score, indicators = analyze_email_address(value, self.lang)
+            risk, color = self.risk_label_and_color(score)
+
+            recommendation = (
+                "Verifica il mittente da canali ufficiali. Non cliccare link ricevuti via e-mail se dominio o contesto non sono chiari."
+                if self.lang == "it"
+                else "Verify the sender through official channels. Do not click links received by e-mail if domain or context is unclear."
+            )
+            limitation = (
+                "Il controllo valuta formato e indicatori statici dell’indirizzo e-mail; non verifica la casella reale né l’autenticità del mittente."
+                if self.lang == "it"
+                else "The check evaluates e-mail format and static indicators; it does not verify the mailbox or sender authenticity."
+            )
+            text = self.format_result("EMAIL / PHISHING CHECK", score, recommendation, indicators, limitation)
+
+            domain = value.split("@", 1)[1].lower()
+            self.clear_actions()
+            self.add_action_button("Google search", f"https://www.google.com/search?q={urllib.parse.quote(domain, safe='')}")
+            self.set_result_text(text, risk, color)
+            self.status_label.configure(text="Email analysis completed")
+            return
+
+        if not is_valid_url_input(value):
+            title = "Formato URL non valido" if self.lang == "it" else "Invalid URL format"
+            msg = (
+                "Inserisci un URL completo in uno di questi formati:\n\n"
+                "https://sito.com\n"
+                "http://sito.com\n"
+                "www.sito.com\n\n"
+                "Oppure inserisci un indirizzo e-mail valido."
+                if self.lang == "it"
+                else "Enter a complete URL in one of these formats:\n\n"
+                "https://site.com\n"
+                "http://site.com\n"
+                "www.site.com\n\n"
+                "Or enter a valid e-mail address."
+            )
+            messagebox.showwarning(title, msg)
+            return
+
         normalized, parsed, host = normalize_url(value)
 
         score = 100
@@ -1144,11 +1514,13 @@ class Web3ShieldApp:
 
         self.clear_actions()
         self.add_action_button("Apri link" if self.lang == "it" else "Open link", normalized)
-        self.add_action_button("Google search", f"https://www.google.com/search?q={urllib.parse.quote(host)}")
-        self.add_action_button("VirusTotal URL", f"https://www.virustotal.com/gui/search/{urllib.parse.quote(normalized)}")
+        self.add_action_button("Google search", f"https://www.google.com/search?q={urllib.parse.quote(host, safe='')}")
+        self.add_action_button("VirusTotal URL", build_virustotal_url(normalized))
+        self.add_action_button("URLScan", build_urlscan_search_url(normalized))
 
         self.set_result_text(text, risk, color)
         self.status_label.configure(text="Link analysis completed")
+
 
     def analyze_contract(self):
         value = self.get_widget_text(self.contract_input)
@@ -1236,11 +1608,20 @@ class Web3ShieldApp:
                 else "EVM addresses found in text: check spender/contract."
             )
 
-        if not indicators:
+        if len(value.strip()) < 12:
+            score -= 25
             indicators.append(
-                "Nessuna keyword critica riconosciuta, ma questo non basta per considerare la firma sicura."
+                "Input molto breve o incompleto: impossibile valutare dominio, spender, token, importo e scopo della firma."
                 if self.lang == "it"
-                else "No critical keyword recognized, but this is not enough to consider the signature safe."
+                else "Very short or incomplete input: domain, spender, token, amount and signature purpose cannot be assessed."
+            )
+
+        if not indicators:
+            score = min(score, 65)
+            indicators.append(
+                "Nessuna keyword critica riconosciuta. Il testo non è sufficiente per considerare la firma sicura: potrebbe essere incompleto, casuale o non interpretabile."
+                if self.lang == "it"
+                else "No critical keyword recognized. The text is not enough to consider the signature safe: it may be incomplete, random or not interpretable."
             )
 
         score = max(0, min(100, score))
@@ -1273,8 +1654,30 @@ class Web3ShieldApp:
         text = self.format_result("WEB3 SIGNATURE / APPROVAL", score, recommendation, indicators, limitation)
 
         self.clear_actions()
-        self.add_action_button("Revoke.cash", "https://revoke.cash")
-        self.add_action_button("Etherscan Token Approval", "https://etherscan.io/tokenapprovalchecker")
+        address_matches = re.findall(r"0x[a-fA-F0-9]{40}", value)
+
+        if address_matches:
+            first_address = address_matches[0]
+            self.add_action_button("Revoke.cash address", f"https://revoke.cash/address/{first_address}")
+            self.add_action_button("Etherscan address", f"https://etherscan.io/address/{first_address}")
+            self.add_action_button(
+                "Etherscan approvals",
+                f"https://etherscan.io/tokenapprovalchecker?search={first_address}"
+            )
+        else:
+            indicators.append(
+                "Nessun address EVM rilevato nel testo: non vengono mostrati link rapidi generici perché richiederebbero inserimento manuale del wallet."
+                if self.lang == "it"
+                else "No EVM address detected in the text: generic quick links are not shown because the wallet would need to be entered manually."
+            )
+            text = self.format_result(
+                "WEB3 SIGNATURE / APPROVAL",
+                score,
+                recommendation,
+                indicators,
+                limitation
+            )
+
         self.set_result_text(text, risk, color)
         self.status_label.configure(text="Signature analysis completed")
 

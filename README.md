@@ -7,6 +7,24 @@
 Project connected to / Progetto collegato a:  
 https://www.molinacrypto.eu
 
+## Latest version
+
+Current release: **v0.4**
+
+MolinaCrypto Web3 Shield v0.4 improves the desktop security workflow with:
+
+- renamed **Check URL / e-mail / dApp** section;
+- validation for URL inputs using `https://`, `http://` or `www.`;
+- e-mail address risk check;
+- fixed VirusTotal URL quick action;
+- fixed URLScan domain search;
+- improved Signature / Approval Check scoring for incomplete or non-interpretable input;
+- direct Revoke.cash and Etherscan quick links when an EVM address is detected;
+- bilingual startup disclaimer with accept/reject flow;
+- custom MolinaCrypto-style desktop logo.
+
+See `CHANGELOG.md` for full release notes.
+
 ---
 
 # English
