@@ -2,6 +2,26 @@
 
 All notable changes to MolinaCrypto Web3 Shield will be documented in this file.
 
+## v0.4.1 - 2026-05-21
+
+### English
+
+Bugfix release for the desktop version.
+
+#### Fixed
+- Fixed startup disclaimer focus handling on Windows.
+- The app now correctly releases the disclaimer modal grab after accept/reject.
+- Fixed an issue where input fields could become unavailable after closing the disclaimer on Windows.
+
+### Italiano
+
+Release bugfix per la versione desktop.
+
+#### Corretto
+- Corretta la gestione del focus del disclaimer iniziale su Windows.
+- L’app ora rilascia correttamente il blocco modale del disclaimer dopo Accetta/Rifiuta.
+- Corretto un problema per cui i campi di input potevano non essere compilabili dopo la chiusura del disclaimer su Windows.
+
 ---
 
 ## [v0.4] - 2026-05-21

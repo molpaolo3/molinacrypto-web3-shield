@@ -20,23 +20,9 @@ It helps answer practical questions such as:
 - Where can I quickly check approvals, explorers and public information?
 
 
-============================================================
-Latest version: v0.4
-============================================================
+Latest version: v0.4.1
 
-Version 0.4 improves the desktop workflow for URL, e-mail, dApp and Web3 signature/approval checks.
-
-Main changes:
-- renamed section to Check URL / e-mail / dApp;
-- URL validation for https://, http:// and www. formats;
-- preliminary e-mail address risk check;
-- fixed VirusTotal quick action;
-- fixed URLScan domain search;
-- improved scoring for incomplete or non-interpretable signature text;
-- direct Revoke.cash and Etherscan quick links when an EVM address is detected;
-- bilingual startup disclaimer with Accept/Reject flow;
-- MolinaCrypto-style desktop logo.
-
+Version 0.4.1 includes all v0.4 improvements and fixes startup disclaimer focus handling on Windows.
 See CHANGELOG.md for full release notes.
 
 

@@ -20,23 +20,9 @@ Serve a rispondere a domande pratiche come:
 - Dove posso controllare rapidamente approvals, explorer e informazioni pubbliche?
 
 
-============================================================
-ULTIMA VERSIONE v0.4
-============================================================
+Ultima versione: v0.4.1
 
-La versione 0.4 migliora il controllo desktop di URL, e-mail, dApp e richieste di firma/approval Web3.
-
-Principali novità:
-- sezione rinominata in Check URL / e-mail / dApp;
-- validazione degli URL nei formati https://, http:// o www.;
-- controllo preliminare degli indirizzi e-mail;
-- correzione del link rapido VirusTotal;
-- correzione della ricerca URLScan;
-- miglioramento dello scoring per firme/testi incompleti o non interpretabili;
-- link rapidi diretti a Revoke.cash ed Etherscan quando viene rilevato un address EVM;
-- disclaimer bilingue all’avvio con scelta Accetta/Rifiuta;
-- logo desktop in stile MolinaCrypto.
-
+La versione 0.4.1 include tutte le migliorie della v0.4 e corregge la gestione del focus del disclaimer iniziale su Windows.
 Per i dettagli completi consultare CHANGELOG.md.
 
 

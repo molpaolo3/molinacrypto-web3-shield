@@ -12,7 +12,7 @@ from typing import List, Tuple, Union
 
 
 APP_NAME = "MolinaCrypto Web3 Shield"
-APP_VERSION = "0.4"
+APP_VERSION = "0.4.1"
 AUTHOR = "Paolo Molina"
 WEBSITE = "https://www.molinacrypto.eu"
 RESOURCES_URL = "https://www.molinacrypto.eu/risorse.html"
@@ -383,7 +383,7 @@ class Web3ShieldApp:
         self.build_ui()
         self.build_context_menu()
         self.render_empty_result()
-        self.root.after(500, self.show_startup_disclaimer)
+        self.root.after(100, self.show_startup_disclaimer)
 
     def t(self, key):
         return TEXT[self.lang].get(key, key)
@@ -462,12 +462,12 @@ class Web3ShieldApp:
         disclaimer.title(f"{APP_NAME} · Disclaimer")
         disclaimer.configure(bg=self.bg)
         disclaimer.resizable(False, False)
-        disclaimer.transient(self.root)
-        disclaimer.grab_set()
 
-        # Rimuove barra titolo, X, riduci a icona e massimizza.
-        # La scelta deve avvenire solo dai pulsanti interni.
+        # Su Windows il popup senza barra titolo può finire dietro la finestra principale.
+        # Per questo lo rendiamo temporaneamente "topmost" e gli diamo focus esplicito.
+        disclaimer.transient(self.root)
         disclaimer.overrideredirect(True)
+        disclaimer.attributes("-topmost", True)
 
         width = 720
         height = 430
@@ -571,9 +571,30 @@ class Web3ShieldApp:
         button_row.pack(fill="x", pady=(16, 0))
 
         def accept_disclaimer():
-            disclaimer.destroy()
+            try:
+                disclaimer.grab_release()
+            except Exception:
+                pass
+            try:
+                disclaimer.attributes("-topmost", False)
+            except Exception:
+                pass
+            try:
+                disclaimer.destroy()
+            except Exception:
+                pass
+
+            self.root.after(100, lambda: self.root.focus_force())        
 
         def reject_disclaimer():
+            try:
+                disclaimer.grab_release()
+            except Exception:
+                pass
+            try:
+                disclaimer.attributes("-topmost", False)
+            except Exception:
+                pass
             try:
                 disclaimer.destroy()
             except Exception:
@@ -616,8 +637,22 @@ class Web3ShieldApp:
         disclaimer.bind("<Escape>", lambda event: "break")
         disclaimer.bind("<Alt-F4>", lambda event: "break")
 
+        def bring_disclaimer_to_front():
+            disclaimer.lift()
+            disclaimer.focus_force()
+            ok_btn.focus_force()
+            disclaimer.attributes("-topmost", True)
+
+        disclaimer.after(100, bring_disclaimer_to_front)
+
         ok_btn.focus_set()
+        disclaimer.grab_set()
         disclaimer.wait_window()
+
+        try:
+            self.root.focus_force()
+        except Exception:
+            pass
 
     def build_ui(self):
         self.main = tk.Frame(self.root, bg=self.bg)
