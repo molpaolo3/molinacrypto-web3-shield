@@ -1,5 +1,5 @@
 MolinaCrypto Web3 Shield
-Version: 0.2
+Version: 0.4.1
 Author: Paolo Molina
 Website: https://www.molinacrypto.eu
 
