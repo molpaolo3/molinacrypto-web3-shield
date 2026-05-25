@@ -1,42 +1,89 @@
 # MolinaCrypto Web3 Shield
 
-**EN:** Open source desktop tool for preliminary Web3 safety checks on public wallet addresses, suspicious links, EVM smart contracts and signature/approval requests.
+**MolinaCrypto Web3 Shield** is an open source desktop tool designed to perform preliminary security and awareness checks on public crypto/Web3 data before the user takes operational decisions.
 
-**IT:** Tool desktop open source per controlli preliminari di sicurezza Web3 su indirizzi wallet pubblici, link sospetti, smart contract EVM e richieste di firma/approval.
+Project connected to: <https://www.molinacrypto.eu>
 
-Project connected to / Progetto collegato a:  
-https://www.molinacrypto.eu
-
-## Latest version
-Current release: **v0.4.1**
-
-MolinaCrypto Web3 Shield v0.4.1 includes all v0.4 improvements and fixes Windows startup disclaimer focus handling.
-
-See `CHANGELOG.md` for full release notes.
+Current version: **v0.5**
 
 ---
 
-# English
+## English
 
-## What it is
+### Overview
 
-MolinaCrypto Web3 Shield is an open source desktop program designed to help crypto and Web3 users perform simple preliminary safety checks before interacting with wallets, dApps, smart contracts, airdrops, claims, mints or signature requests.
+MolinaCrypto Web3 Shield helps users inspect public Bitcoin, Ethereum/EVM, Web3, URL, e-mail and Lightning-related data without requesting wallet connection, seed phrases, private keys or passwords.
 
-It is designed for normal users, not only technical users.
+The tool is designed for prevention, awareness and first-level risk evaluation. It does not replace a wallet simulator, a blockchain forensic platform, professional cybersecurity analysis, legal advice, tax advice or investment advice.
 
-The tool helps answer practical questions such as:
+### Main features in v0.5
 
-- Does this wallet address look formally correct?
-- Could this Web3 link be suspicious?
-- Is this smart contract/EVM address at least in the correct format?
-- Does this Web3 signature contain risky words such as `approve`, `permit` or `setApprovalForAll`?
-- Where can I quickly check approvals, explorers and public information?
+#### New tabbed UX
 
----
+Version 0.5 introduces a clearer tab-based interface:
 
-## Security principles
+- **Wallet & TX**
+- **Web Risk**
+- **Lightning**
 
-MolinaCrypto Web3 Shield:
+This keeps the interface cleaner and makes future features easier to add without cluttering the first screen.
+
+#### Wallet & TX
+
+- Bitcoin address format recognition.
+- Bitcoin public address check via mempool.space API.
+- Confirmed BTC balance.
+- Unconfirmed/mempool balance.
+- Confirmed and unconfirmed transaction count.
+- Recommended Bitcoin fee snapshot.
+- Ethereum/EVM public address recognition.
+- Direct quick actions for Etherscan, Revoke.cash, BaseScan, PolygonScan and Arbiscan.
+- New **Bitcoin Transaction Check** for public Bitcoin TXIDs.
+- Bitcoin transaction status: confirmed/unconfirmed.
+- Bitcoin block height and block time when available.
+- Transaction inputs/outputs.
+- Total output amount.
+- Fee and estimated fee rate in sat/vB.
+- Quick links to mempool.space and Blockstream.
+
+#### Web Risk
+
+- URL, e-mail and dApp preliminary risk check.
+- URL validation for `https://`, `http://` and `www.` formats.
+- E-mail address static risk analysis.
+- Suspicious keyword detection.
+- Brand/domain impersonation indicators.
+- HTTPS/IP/punycode/long-domain warnings.
+- Fixed VirusTotal URL quick action.
+- Fixed URLScan domain search quick action.
+- Smart contract/EVM address format check.
+- Signature / Approval Check for common Web3 approval and signing risks.
+- Detection of keywords such as `approve`, `setApprovalForAll`, `permit`, `permit2`, `eth_sign`, `transferFrom`, `safeTransferFrom`.
+- Direct Revoke.cash and Etherscan links when an EVM address is detected in signature text.
+- No generic useless quick-action links when no EVM address is detected.
+
+#### Lightning
+
+- New **Lightning Invoice / LNURL Check**.
+- Local decoding of BOLT11 Lightning invoices where supported.
+- Invoice network detection: mainnet/testnet/regtest-like.
+- Invoice amount detection when present.
+- Creation and expiry time.
+- Description field when present.
+- Payment hash presence indicator.
+- Expired invoice warning.
+- Amountless invoice warning.
+- Missing description warning.
+- LNURL decoding.
+- LNURL endpoint check.
+- Lightning Address check using the standard `/.well-known/lnurlp/` endpoint.
+- LNURL type, callback, min/max amount and comment support when available.
+- Warning for LNURL-auth/login flows.
+- Warning for non-HTTPS endpoints.
+
+### Security model
+
+This tool:
 
 - does **not** ask for seed phrases;
 - does **not** ask for private keys;
@@ -44,372 +91,122 @@ MolinaCrypto Web3 Shield:
 - does **not** connect to wallets;
 - does **not** sign transactions;
 - does **not** move funds;
-- does **not** custody crypto assets;
-- does **not** create wallets;
 - works only with public data or text manually pasted by the user.
 
-Never enter:
+### External services
 
-- seed phrases;
-- private keys;
-- passwords;
-- 2FA codes;
-- recovery phrases;
-- banking data;
-- sensitive personal data.
+Depending on the selected check, the tool may query or open external services, including mempool.space, Blockstream, Etherscan, Revoke.cash, BaseScan, PolygonScan, Arbiscan, VirusTotal, URLScan, Google Search and public Lightning Address / LNURL endpoints.
 
-If you accidentally pasted a seed phrase or private key into any program, website, chat or online form, consider that wallet potentially compromised.
+The user remains responsible for evaluating whether opening or querying an external service is appropriate in their context.
 
----
+### Limitations
 
-## Main features
+MolinaCrypto Web3 Shield provides an indicative risk score based on static checks, public data and heuristic indicators.
 
-### Wallet / Address Check
+It cannot guarantee that a wallet, URL, contract, signature, invoice, LNURL or transaction is safe. It cannot verify ownership of addresses, real-world identities, intent of a transaction or whether a Lightning payment has already been completed.
 
-Checks public Bitcoin and Ethereum/EVM addresses.
+Lightning payments are off-chain. The tool can inspect the payment request, invoice, LNURL or Lightning Address endpoint, but it cannot act as a universal Lightning payment explorer.
 
-For Bitcoin addresses, the tool can read public data through mempool.space:
+### Linux/source usage
 
-- confirmed balance;
-- unconfirmed/mempool balance;
-- confirmed transactions;
-- unconfirmed transactions;
-- estimated Bitcoin fee;
-- quick links to Mempool.space and Blockstream.
+Install Python 3 and Tkinter if not already available.
 
-For Ethereum/EVM addresses, the tool:
+On Debian/Ubuntu/Linux Mint:
 
-- validates the EVM address format;
-- reminds users that the main Web3 risks are approvals, signatures and dApp interactions;
-- provides quick links to Etherscan, Revoke.cash, BaseScan, PolygonScan and Arbiscan.
+```bash
+sudo apt update
+sudo apt install python3 python3-tk
+```
 
----
+Run:
 
-### Link / dApp Check
+```bash
+python3 MolinaCryptoWeb3Shield.py
+```
 
-Performs a static check of suspicious Web3 links.
+If an `avvia.sh` script is included:
 
-It looks for indicators such as:
+```bash
+chmod +x avvia.sh
+./avvia.sh
+```
 
-- missing HTTPS;
-- very long domains;
-- many hyphens;
-- IP-based hosts;
-- suspicious Web3 words such as `claim`, `airdrop`, `verify`, `wallet`, `seed`, `restore`, `recover`;
-- known brand names inside domains that do not look official.
+### Windows portable usage
 
-Quick actions include:
+The Windows portable release is distributed as a ZIP containing an `.exe` file. Extract the ZIP and run:
 
-- Open link;
-- Google Search;
-- VirusTotal URL search.
+```text
+MolinaCryptoWeb3Shield.exe
+```
 
-Important: the tool does not visit the website and does not analyze JavaScript. It only performs a static preliminary check.
+Windows may show a SmartScreen or security warning because the executable is not signed with a commercial code-signing certificate. This does not automatically mean the file is malicious. Users should download the program only from the official GitHub release page and verify the SHA256 hash when provided.
 
----
+### Project links
 
-### Smart Contract Check
+- Website: <https://www.molinacrypto.eu>
+- Resources: <https://www.molinacrypto.eu/risorse.html>
 
-Checks whether a pasted smart contract/address has a valid Ethereum/EVM format.
+### Disclaimer
 
-The tool reminds users to manually verify:
-
-- verified or unverified source code;
-- proxy contract;
-- active owner;
-- admin functions;
-- pause / blacklist / mint / upgrade / withdraw functions;
-- interaction history;
-- consistency with the official project website.
-
-Quick actions include:
-
-- Etherscan;
-- Revoke.cash;
-- BaseScan;
-- PolygonScan;
-- Arbiscan.
+This tool is for informational and educational security awareness purposes only. It does not provide financial, investment, tax, legal or professional cybersecurity advice. The responsibility for any operational decision remains with the user.
 
 ---
 
-### Signature / Approval Check
+## Italiano
 
-Interprets pasted Web3 signature or approval text using keyword-based risk indicators.
+### Panoramica
 
-The tool looks for:
+**MolinaCrypto Web3 Shield** aiuta l’utente a controllare dati pubblici Bitcoin, Ethereum/EVM, Web3, URL, e-mail e Lightning prima di prendere decisioni operative.
 
-- `setApprovalForAll`;
-- `approve`;
-- `increaseAllowance`;
-- `permit`;
-- `permit2`;
-- `eth_sign`;
-- `personal_sign`;
-- `eth_signTypedData`;
-- `transferFrom`;
-- `safeTransferFrom`;
-- possible unlimited approvals;
-- EVM addresses inside pasted text.
+Il tool è pensato per prevenzione, consapevolezza e prima valutazione del rischio. Non sostituisce un wallet simulator, una piattaforma di blockchain forensic, un’analisi professionale di cybersecurity, una consulenza legale, fiscale o finanziaria.
 
-This is not a transaction simulator.  
-It is a prudential text-based warning tool.
+### Novità principali della v0.5
 
----
+La versione 0.5 introduce una nuova interfaccia a schede:
 
-## Linux usage
+- **Wallet & TX**
+- **Web Risk**
+- **Lightning**
 
-Requirements:
+La sezione **Wallet & TX** include controllo wallet/address Bitcoin ed Ethereum/EVM e nuovo controllo TXID Bitcoin pubblico. La sezione **Web Risk** mantiene e migliora URL/e-mail/dApp, Smart Contract Check e Signature / Approval Check. La sezione **Lightning** introduce controllo preventivo di invoice Lightning, LNURL e Lightning Address.
 
-- Python 3
+### Modello di sicurezza
 
-Check Python version:
+Questo tool non chiede seed phrase, private key o password, non collega il wallet, non firma transazioni e non sposta fondi. Lavora solo con dati pubblici o testo incollato manualmente dall’utente.
 
-    python3 --version
+### Servizi esterni
 
-Run the program:
+A seconda del controllo selezionato, il tool può interrogare o aprire servizi esterni, tra cui mempool.space, Blockstream, Etherscan, Revoke.cash, BaseScan, PolygonScan, Arbiscan, VirusTotal, URLScan, Google Search ed endpoint pubblici Lightning Address / LNURL.
 
-    chmod +x avvia.sh
-    ./avvia.sh
+### Limiti
 
-Alternatively:
+MolinaCrypto Web3 Shield fornisce uno score indicativo basato su controlli statici, dati pubblici e indicatori euristici. Non può garantire che wallet, URL, contratto, firma, invoice, LNURL o transazione siano sicuri. Lightning è off-chain: il tool può ispezionare richiesta di pagamento, invoice, LNURL o endpoint Lightning Address, ma non può funzionare come explorer universale dei pagamenti Lightning.
 
-    python3 MolinaCryptoWeb3Shield.py
+### Uso Linux/source
 
-No external Python packages are required.
+```bash
+sudo apt update
+sudo apt install python3 python3-tk
+python3 MolinaCryptoWeb3Shield.py
+```
 
----
+Con `avvia.sh`:
 
-## Project files
+```bash
+chmod +x avvia.sh
+./avvia.sh
+```
 
-    MolinaCryptoWeb3Shield.py   Main Python application
-    avvia.sh                    Linux launcher
-    README.md                   GitHub README
-    README_IT.txt               Detailed Italian guide
-    README_EN.txt               Detailed English guide
-    CHANGELOG.md                Version history
-    LICENSE                     MIT License
-    requirements.txt            Python dependency note
+### Uso Windows portable
 
----
+Estrarre lo ZIP ed eseguire:
 
-## Detailed English guide
+```text
+MolinaCryptoWeb3Shield.exe
+```
 
-For a full step-by-step English guide, read:
+Windows può mostrare un avviso SmartScreen o di sicurezza perché l’eseguibile non è firmato con certificato commerciale. Scaricare il programma solo dalla release GitHub ufficiale e verificare l’hash SHA256 quando disponibile.
 
-    README_EN.txt
+### Disclaimer
 
----
-
-## Disclaimer
-
-MolinaCrypto Web3 Shield is provided for informational and educational purposes only.
-
-It does not constitute financial, tax, legal, investment or professional cybersecurity advice.
-
-The user remains responsible for their own decisions, official-source verification and wallet usage.
-
-The tool does not guarantee that a website, wallet, smart contract or signature request is safe or dangerous.
-
----
-
-# Italiano
-
-## Cos’è
-
-MolinaCrypto Web3 Shield è un programma desktop open source pensato per aiutare utenti crypto e Web3 a fare semplici controlli preliminari di sicurezza prima di interagire con wallet, dApp, smart contract, airdrop, claim, mint o richieste di firma.
-
-È pensato per utenti normali, non solo per tecnici.
-
-Il tool aiuta a rispondere a domande pratiche come:
-
-- Questo indirizzo wallet sembra formalmente corretto?
-- Questo link Web3 può essere sospetto?
-- Questo smart contract/address EVM è almeno nel formato corretto?
-- Questa firma Web3 contiene parole rischiose come `approve`, `permit` o `setApprovalForAll`?
-- Dove posso controllare rapidamente approvals, explorer e informazioni pubbliche?
-
----
-
-## Principi di sicurezza
-
-MolinaCrypto Web3 Shield:
-
-- non chiede **seed phrase**;
-- non chiede **private key**;
-- non chiede **password**;
-- non collega il wallet;
-- non firma transazioni;
-- non sposta fondi;
-- non custodisce criptovalute;
-- non crea wallet;
-- lavora solo con dati pubblici o testo incollato manualmente dall’utente.
-
-Non inserire mai:
-
-- seed phrase;
-- private key;
-- password;
-- codici 2FA;
-- recovery phrase;
-- dati bancari;
-- dati personali sensibili.
-
-Se hai incollato per errore una seed phrase o una private key in qualsiasi programma, sito, chat o form online, considera quel wallet potenzialmente compromesso.
-
----
-
-## Funzioni principali
-
-### Wallet / Address Check
-
-Controlla indirizzi pubblici Bitcoin ed Ethereum/EVM.
-
-Per indirizzi Bitcoin, il tool può leggere dati pubblici tramite mempool.space:
-
-- saldo confermato;
-- saldo non confermato/mempool;
-- transazioni confermate;
-- transazioni non confermate;
-- fee Bitcoin stimata;
-- link rapidi verso Mempool.space e Blockstream.
-
-Per indirizzi Ethereum/EVM, il tool:
-
-- valida il formato dell’indirizzo EVM;
-- ricorda che i principali rischi Web3 derivano da approvals, firme e interazioni con dApp;
-- fornisce link rapidi verso Etherscan, Revoke.cash, BaseScan, PolygonScan e Arbiscan.
-
----
-
-### Link / dApp Check
-
-Effettua un controllo statico di link Web3 sospetti.
-
-Cerca indicatori come:
-
-- assenza di HTTPS;
-- domini molto lunghi;
-- molti trattini nel dominio;
-- host basati su indirizzo IP;
-- parole sospette Web3 come `claim`, `airdrop`, `verify`, `wallet`, `seed`, `restore`, `recover`;
-- nomi di brand noti dentro domini che non sembrano ufficiali.
-
-Azioni rapide disponibili:
-
-- Apri link;
-- Google Search;
-- VirusTotal URL.
-
-Importante: il tool non visita realmente il sito e non analizza JavaScript. Effettua solo un controllo preliminare statico.
-
----
-
-### Smart Contract Check
-
-Controlla se uno smart contract/address incollato ha un formato Ethereum/EVM valido.
-
-Il tool ricorda all’utente di verificare manualmente:
-
-- codice sorgente verificato o non verificato;
-- proxy contract;
-- owner attivo;
-- funzioni admin;
-- funzioni pause / blacklist / mint / upgrade / withdraw;
-- cronologia delle interazioni;
-- coerenza con il sito ufficiale del progetto.
-
-Azioni rapide disponibili:
-
-- Etherscan;
-- Revoke.cash;
-- BaseScan;
-- PolygonScan;
-- Arbiscan.
-
----
-
-### Signature / Approval Check
-
-Interpreta testo incollato relativo a firme Web3 o approval usando indicatori basati su parole chiave.
-
-Il tool cerca:
-
-- `setApprovalForAll`;
-- `approve`;
-- `increaseAllowance`;
-- `permit`;
-- `permit2`;
-- `eth_sign`;
-- `personal_sign`;
-- `eth_signTypedData`;
-- `transferFrom`;
-- `safeTransferFrom`;
-- possibili approval illimitate;
-- indirizzi EVM presenti nel testo incollato.
-
-Non è un simulatore di transazioni.  
-È uno strumento prudenziale testuale per aiutare l’utente a capire quando fermarsi.
-
----
-
-## Uso su Linux
-
-Requisiti:
-
-- Python 3
-
-Verifica la versione Python:
-
-    python3 --version
-
-Avvia il programma:
-
-    chmod +x avvia.sh
-    ./avvia.sh
-
-In alternativa:
-
-    python3 MolinaCryptoWeb3Shield.py
-
-Non sono richiesti pacchetti Python esterni.
-
----
-
-## File del progetto
-
-    MolinaCryptoWeb3Shield.py   Applicazione Python principale
-    avvia.sh                    Launcher Linux
-    README.md                   README GitHub
-    README_IT.txt               Guida dettagliata in italiano
-    README_EN.txt               Guida dettagliata in inglese
-    CHANGELOG.md                Storico versioni
-    LICENSE                     Licenza MIT
-    requirements.txt            Nota sulle dipendenze Python
-
----
-
-## Guida italiana dettagliata
-
-Per una guida italiana completa passo-passo, leggere:
-
-    README_IT.txt
-
----
-
-## Disclaimer
-
-MolinaCrypto Web3 Shield è fornito solo a scopo informativo ed educativo.
-
-Non costituisce consulenza finanziaria, fiscale, legale, di investimento o cybersecurity professionale.
-
-L’utente resta responsabile delle proprie decisioni, delle verifiche su fonti ufficiali e dell’uso dei propri wallet.
-
-Il tool non garantisce che un sito, wallet, smart contract o richiesta di firma sia sicuro o pericoloso.
-
----
-
-# License / Licenza
-
-MIT License.
-
-Copyright © 2026 Paolo Molina.
+Questo tool ha finalità informative, educative e di security awareness. Non costituisce consulenza finanziaria, di investimento, fiscale, legale o professionale in ambito cybersecurity. La responsabilità delle decisioni operative resta dell’utente.
