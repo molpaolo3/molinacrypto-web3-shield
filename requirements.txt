@@ -1,5 +1,5 @@
 # MolinaCrypto Web3 Shield
-# Version: 0.2
+# Version: 0.5
 #
 # No external Python packages are required.
 # The program uses only Python standard library modules:
