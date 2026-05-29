@@ -144,7 +144,7 @@ Windows may show a SmartScreen or security warning because the executable is not
 ### Project links
 
 - Website: <https://www.molinacrypto.eu>
-- Resources: <https://www.molinacrypto.eu/risorse.html>
+- Resources: <https://www.molinacrypto.eu/security-lab.html>
 
 ### Disclaimer
 
